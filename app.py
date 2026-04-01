@@ -7,7 +7,7 @@ st.set_page_config(page_title="GitHub Repo Onboarding", layout="wide", page_icon
 
 REPOS_PER_PAGE = 10
 USERS_FILE = "users.json"
-GITHUB_CONFIG_REPO    = "shashanktu/Repo_Onboarding"
+GITHUB_CONFIG_REPO    = "shashanktu/repo_onboard_full"
 GITHUB_CONFIG_PATH    = "config.json"
 GITHUB_CONFIG_RAW_URL = f"https://raw.githubusercontent.com/{GITHUB_CONFIG_REPO}/main/{GITHUB_CONFIG_PATH}"
 GITHUB_CONFIG_API_URL = f"https://api.github.com/repos/{GITHUB_CONFIG_REPO}/contents/{GITHUB_CONFIG_PATH}"
