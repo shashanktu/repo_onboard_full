@@ -2,8 +2,10 @@ import base64
 import json
 
 import requests
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
+from db import get_db, Webhook
 
 app = FastAPI()
 
@@ -62,29 +64,24 @@ def login(req: LoginRequest):
 
 
 @app.get("/config/webhook-url")
-def get_webhook_url():
-    resp = requests.get(GITHUB_CONFIG_RAW_URL)
-    if resp.status_code == 200:
-        return resp.json()
-    raise HTTPException(status_code=502, detail="Failed to fetch remote config.")
+def get_webhook_url(db: Session = Depends(get_db)):
+    webhook = db.query(Webhook).first()
+    if not webhook:
+        raise HTTPException(status_code=404, detail="No webhook config found in database.")
+    return {"curr_webhook_url": webhook.curr_webhook_url, "prev_webhook_url": webhook.prev_webhook_url}
 
 
 @app.post("/config/webhook-url")
-def update_webhook_url_config(req: UpdateConfigRequest):
-    headers = {"Authorization": f"token {req.pat}", "Accept": "application/vnd.github+json"}
-    meta = requests.get(GITHUB_CONFIG_API_URL, headers=headers)
-    if meta.status_code != 200:
-        raise HTTPException(status_code=meta.status_code, detail=f"Could not fetch config metadata. Status: {meta.status_code}")
-    sha = meta.json()["sha"]
-    resp_raw = requests.get(GITHUB_CONFIG_RAW_URL)
-    current_config = resp_raw.json() if resp_raw.status_code == 200 else {}
-    current_config["CURR_WEBHOOK_URL"] = req.new_url
-    content = base64.b64encode(json.dumps(current_config, indent=4).encode()).decode()
-    payload = {"message": f"Update CURR_WEBHOOK_URL to {req.new_url}", "content": content, "sha": sha}
-    resp = requests.put(GITHUB_CONFIG_API_URL, headers=headers, json=payload)
-    if resp.status_code in (200, 201):
-        return {"success": True}
-    raise HTTPException(status_code=resp.status_code, detail=resp.json().get("message", "Unknown error"))
+def update_webhook_url_config(req: UpdateConfigRequest, db: Session = Depends(get_db)):
+    webhook = db.query(Webhook).first()
+    if not webhook:
+        webhook = Webhook(curr_webhook_url=req.new_url, prev_webhook_url=None)
+        db.add(webhook)
+    else:
+        webhook.prev_webhook_url = webhook.curr_webhook_url
+        webhook.curr_webhook_url = req.new_url
+    db.commit()
+    return {"success": True}
 
 
 # ── Repos ─────────────────────────────────────────────────────────────────────
