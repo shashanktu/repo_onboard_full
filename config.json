@@ -1,4 +1,4 @@
 {
     "PREV_WEBHOOK_URL": "https://onboarding-five-delta.vercel.app/github-webhook",
-    "CURR_WEBHOOK_URL": "http://127.0.0.1:8000/config/webhook-url"
+    "CURR_WEBHOOK_URL": "http://127.0.0.1:8001/config/webhook-url"
 }
