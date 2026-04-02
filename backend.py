@@ -156,6 +156,8 @@ def patch_webhook(req: PatchWebhookRequest):
 
 @app.post("/webhook/update")
 def update_webhook(req: NewWebhookRequest):
+
+    print("Previous url:", req.prev_webhook_url,"Current url:", req.curr_webhook_url)
     url = f"https://api.github.com/repos/{req.github_username}/{req.repo_name}/hooks"
     headers = {"Authorization": f"token {req.pat}", "Accept": "application/vnd.github+json"}
     resp = requests.get(url, headers=headers)
