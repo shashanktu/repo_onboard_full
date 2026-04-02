@@ -26,6 +26,13 @@ class WebhookRequest(BaseModel):
     pat: str
     webhook_url: str
 
+class NewWebhookRequest(BaseModel):
+    github_username: str
+    repo_name: str
+    pat: str
+    prev_webhook_url: str
+    curr_webhook_url: str
+
 class PatchWebhookRequest(BaseModel):
     github_username: str
     repo_name: str
@@ -139,4 +146,28 @@ def patch_webhook(req: PatchWebhookRequest):
     headers = {"Authorization": f"token {req.pat}", "Accept": "application/vnd.github+json"}
     payload = {"config": {"url": req.new_url, "content_type": "application/json", "insecure_ssl": "0"}}
     resp = requests.patch(url, headers=headers, json=payload)
+    return {"status_code": resp.status_code, "body": resp.json()}
+
+@app.post("/webhook/update")
+def update_webhook(req: NewWebhookRequest):
+    url = f"https://api.github.com/repos/{req.github_username}/{req.repo_name}/hooks"
+    headers = {"Authorization": f"token {req.pat}", "Accept": "application/vnd.github+json"}
+    resp = requests.get(url, headers=headers)
+    if resp.status_code != 200:
+        raise HTTPException(status_code=resp.status_code, detail="Failed to fetch webhooks.")
+    hook_id = None
+    for hook in resp.json():
+        if hook.get("config", {}).get("url") == req.prev_webhook_url:
+            hook_id = hook["id"]
+    if not hook_id:
+        payload = {
+            "name": "web", "active": True,
+            "events": ["push", "pull_request"],
+            "config": {"url": req.curr_webhook_url, "content_type": "application/json", "insecure_ssl": "0"},
+        }
+        resp = requests.post(url, headers=headers, json=payload)
+    else:
+        url = f"https://api.github.com/repos/{req.github_username}/{req.repo_name}/hooks/{hook_id}"
+        payload = {"config": {"url": req.curr_webhook_url, "content_type": "application/json", "insecure_ssl": "0"}}
+        resp = requests.patch(url, headers=headers, json=payload)
     return {"status_code": resp.status_code, "body": resp.json()}
