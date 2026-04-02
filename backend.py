@@ -77,7 +77,7 @@ def get_webhook_url(db: Session = Depends(get_db)):
     webhook = db.query(Webhook).first()
     if not webhook:
         raise HTTPException(status_code=404, detail="No webhook config found in database.")
-    return {"PREV_WEBHOOK_URL": webhook.curr_webhook_url, "CURR_WEBHOOK_URL": webhook.prev_webhook_url}
+    return {"CURR_WEBHOOK_URL": webhook.curr_webhook_url, "PREV_WEBHOOK_URL": webhook.prev_webhook_url}
 
 
 @app.post("/config/webhook-url")
