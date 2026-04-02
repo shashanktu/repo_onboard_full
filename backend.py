@@ -6,8 +6,17 @@ from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from db import get_db, Webhook
-
+from fastapi.middleware.cors import CORSMiddleware
+ 
 app = FastAPI()
+ 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 USERS_FILE = "users.json"
 GITHUB_CONFIG_REPO    = "shashanktu/repo_onboard_full"
